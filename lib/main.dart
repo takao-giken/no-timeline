@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:twitter/twitter.dart';
-import 'package:oauth2/oauth2.dart';
+import 'package:oauth1/oauth1.dart' as oauth1;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 void main() => runApp(MyApp());
 
@@ -11,8 +13,83 @@ final requestTokenEndPoint =
 final accessTokenEndPoint =
     Uri.parse("https://api.twitter.com/oauth/authorize");
 final redirectUrl = Uri.parse("http://localhost:8080/");
-final identifier = "my client identifier";
-final secret = "my client secret";
+final apiKey = "";
+final apiSecret = "";
+
+Future<Stream<String>> _server() async {
+  final StreamController<String> onCode = new StreamController();
+  HttpServer server =
+      await HttpServer.bind(InternetAddress.LOOPBACK_IP_V4, 8080);
+  server.listen((HttpRequest request) async {
+    final String code = request.uri.queryParameters["code"];
+    request.response
+      ..statusCode = 200
+      ..headers.set("Content-Type", ContentType.HTML.mimeType)
+      ..write("<html><h1>You can now close this window</h1></html>");
+    await request.response.close();
+    await server.close(force: true);
+    onCode.add(code);
+    await onCode.close();
+  });
+  return onCode.stream;
+}
+
+_launchURLFromUri(Uri url) async {
+  var urlStr = url.toString();
+  if (await canLaunch(urlStr)) {
+    await launch(urlStr);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
+
+_launchURL(String url) async {
+  var urlStr = url;
+  if (await canLaunch(urlStr)) {
+    await launch(urlStr);
+  } else {
+    throw 'Could not launch $url';
+  }
+}
+
+
+Future<oauth1.Client> getClient() async {
+  Stream<String> onCode = await _server();
+  var platform = new oauth1.Platform(
+      'https://api.twitter.com/oauth/request_token', // temporary credentials request
+      'https://api.twitter.com/oauth/authorize',     // resource owner authorization
+      'https://api.twitter.com/oauth/access_token',  // token credentials request
+      oauth1.SignatureMethods.HMAC_SHA1              // signature method
+      );
+  var clientCredentials = new oauth1.ClientCredentials(apiKey, apiSecret);
+  var auth = new oauth1.Authorization(clientCredentials, platform);
+  auth.requestTemporaryCredentials('oob').then((res) async {
+      // redirect to authorization page
+      String url = auth.getResourceOwnerAuthorizationURI(res.credentials.token);
+      url+="&redirect_uri="+redirectUrl.toString();
+
+      // get verifier (PIN)
+      //stdout.write("PIN: ");
+      _launchURL(url);
+      final String code = await onCode.first;
+
+      // request token credentials (access tokens)
+      return auth.requestTokenCredentials(res.credentials, code);
+    }).then((res) {
+      // yeah, you got token credentials
+      // create Client object
+      var client = new oauth1.Client(platform.signatureMethod, clientCredentials, res.credentials);
+
+      // now you can access to protected resources via client
+      client.get('https://api.twitter.com/1.1/statuses/home_timeline.json?count=1').then((res) {
+        print(res.body);
+      });
+
+      // NOTE: you can get optional values from AuthorizationResponse object
+      print("Your screen name is " + res.optionalParameters['screen_name']);
+    });
+
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -138,7 +215,8 @@ class RandomWordsState2 extends State<RandomWords2> {
   var page = 1;
 
   Future<void> getTimeline() async {
-      Twitter twitter= new Twitter();
+      Twitter twitter= new Twitter(apiKey, apiSecret,
+                        '', '');
       var response = await twitter.request("GET", "statuses/mentions_timeline.json?page=${page}");
       List parsedList = jsonDecode(response.body);
       twitter.close();
@@ -154,7 +232,7 @@ class RandomWordsState2 extends State<RandomWords2> {
   void _incrementCounter() {
     setState(() {
       _counter++;
-      getTimeline();
+      getClient();
     });
   }
 
