@@ -24,7 +24,7 @@ Future<Stream<String>> _server() async {
     final String code = request.uri.queryParameters["code"];
     request.response
       ..statusCode = 200
-      ..headers.set("Content-Type", ContentType.HTML.mimeType)
+      ..headers.set("Content-Type", ContentType.html.mimeType)
       ..write("<html><h1>You can now close this window</h1></html>");
     await request.response.close();
     await server.close(force: true);
@@ -59,7 +59,7 @@ Future<oauth1.Client> getClient() async {
       'https://api.twitter.com/oauth/request_token', // temporary credentials request
       'https://api.twitter.com/oauth/authorize',     // resource owner authorization
       'https://api.twitter.com/oauth/access_token',  // token credentials request
-      oauth1.SignatureMethods.HMAC_SHA1              // signature method
+      oauth1.SignatureMethods.hmacSha1              // signature method
       );
   var clientCredentials = new oauth1.ClientCredentials(apiKey, apiSecret);
   var auth = new oauth1.Authorization(clientCredentials, platform);
@@ -216,7 +216,7 @@ class RandomWordsState2 extends State<RandomWords2> {
 
   Future<void> getTimeline() async {
       Twitter twitter= new Twitter(apiKey, apiSecret,
-                        '', '');
+                         '', '');
       var response = await twitter.request("GET", "statuses/mentions_timeline.json?page=${page}");
       List parsedList = jsonDecode(response.body);
       twitter.close();
