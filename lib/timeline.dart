@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:twitter/twitter.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import './env.dart';
 
-final apiKey = "";
-final apiSecret = "";
+final apiKey = EnvironmentConfig.API_KEY;
+final apiSecret = EnvironmentConfig.API_SECRET;
 
 class Tweet {
   String tweet = "";
@@ -18,8 +20,16 @@ class RandomWordsState2 extends State<RandomWords2> {
   var length;
   var page = 1;
 
-  Future<void> getTimeline() async {
-    Twitter twitter = new Twitter(apiKey, apiSecret, '', '');
+  Future<void> getNotifications() async {
+    
+    final storage = new FlutterSecureStorage();
+    String accessToken = await storage.read(key:'accessToken');
+    String accessTokenSecret = await storage.read(key:'accessTokenSecret');
+
+    //String accessToken = await FlutterKeychain.get(key: "accessToken");
+    //String accessTokenSecret = await FlutterKeychain.get(key: "accessTokenSecret");
+
+    Twitter twitter = new Twitter(apiKey, apiSecret, accessToken, accessTokenSecret);
     var response = await twitter.request(
         "GET", "statuses/mentions_timeline.json?page=$page");
     List parsedList = jsonDecode(response.body);
@@ -36,7 +46,7 @@ class RandomWordsState2 extends State<RandomWords2> {
   // #enddocregion RWS-var
   void _incrementCounter() {
     setState(() {
-      // getClient();
+      getNotifications();
     });
   }
 
