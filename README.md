@@ -1,16 +1,9 @@
 # no_timeline
 
-A new Flutter project.
-
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.io/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.io/docs/cookbook)
-
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.io/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+1. Get your Twitter API key [here](https://developer.twitter.com/en/apply-for-access).
+2. Build project following commands.
+```
+flutter run --dart-define=API_KEY={Your Twitter API_KEY} --dart-define=API_SECRET={Your Twitter API_SECRET}
+```

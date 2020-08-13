@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show debugDefaultTargetPlatformOverride;
+
 import 'package:no_timeline/timeline.dart';
 import 'package:no_timeline/twitter_auth.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import './env.dart';
+//import 'package:flutter_keychain/flutter_keychain.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  // See https://github.com/flutter/flutter/wiki/Desktop-shells#target-platform-override
+  debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 
-final apiKey = "";
-final apiSecret = "";
+  runApp(new MyApp());
+}
+
+final apiKey = EnvironmentConfig.API_KEY;
+final apiSecret = EnvironmentConfig.API_SECRET;
 
 class MyApp extends StatelessWidget {
   @override
@@ -77,6 +88,14 @@ class RandomWordsState extends State<RandomWords> {
     Token token = await getToken(apiKey, apiSecret);
     print(token.accessToken);
     print(token.accessTokenSecret);
+
+    //await FlutterKeychain.put(key: "accessToken",value:token.accessToken);
+    //await FlutterKeychain.put(key: "accessTokenSecret",value:token.accessTokenSecret);
+    
+    final storage = new FlutterSecureStorage();
+    await storage.write(key:'accessToken',value:token.accessToken);
+    await storage.write(key:'accessTokenSecret',value:token.accessTokenSecret);
+    
     setState(() {
       _counter++;
     });
